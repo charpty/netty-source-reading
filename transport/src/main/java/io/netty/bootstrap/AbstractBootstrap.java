@@ -323,7 +323,9 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         // 从ReflectiveChannelFactory中通过反射获取到设置的channel实例
         Channel channel = null;
         try {
+            // 通过反射工厂ReflectiveChannelFactory得到netty channel
             channel = channelFactory.newChannel();
+            // init过程是建立pipeline职责链的过程，注册前有 head -> ChannelInitializer -> tail
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {
@@ -339,6 +341,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         EventLoopGroup group = config().group();
         // 核心操作，根据channel类型将channel注册到选择器上selector（或KQueue、Epoll等）
         // 这里谁注册谁是说起来真的别扭D:#，要注意这里也是交给线程池处理的（ES）
+        // 注册完成之后pipeline：head -> ServerBootstrapAcceptor -> tail
         ChannelFuture regFuture = group.register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {

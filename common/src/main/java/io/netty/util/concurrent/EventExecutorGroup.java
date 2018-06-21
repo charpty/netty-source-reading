@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
  * via its {@link #next()} method. Besides this, it is also responsible for handling their
  * life-cycle and allows shutting them down in a global fashion.
  *
+ *
  */
 public interface EventExecutorGroup extends ScheduledExecutorService, Iterable<EventExecutor> {
 

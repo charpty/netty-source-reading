@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * {@link Bootstrap} sub-class which allows easy bootstrap of {@link ServerChannel}
- *
  */
 public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerChannel> {
 
@@ -50,7 +49,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     private volatile EventLoopGroup childGroup;
     private volatile ChannelHandler childHandler;
 
-    public ServerBootstrap() { }
+    public ServerBootstrap() {
+    }
 
     private ServerBootstrap(ServerBootstrap bootstrap) {
         super(bootstrap);
@@ -139,20 +139,22 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
 
     @Override
     void init(Channel channel) throws Exception {
+        // TCP选项，包括BACKLOG、TCP_NODELAY等等
         final Map<ChannelOption<?>, Object> options = options0();
         synchronized (options) {
             setChannelOptions(channel, options, logger);
         }
-
+        // 由bootstrap寄存的自定义属性map
         final Map<AttributeKey<?>, Object> attrs = attrs0();
         synchronized (attrs) {
-            for (Entry<AttributeKey<?>, Object> e: attrs.entrySet()) {
+            for (Entry<AttributeKey<?>, Object> e : attrs.entrySet()) {
                 @SuppressWarnings("unchecked")
                 AttributeKey<Object> key = (AttributeKey<Object>) e.getKey();
                 channel.attr(key).set(e.getValue());
             }
         }
 
+        // pipeline是数据处理的核心，通过handler链处理各种出入消息
         ChannelPipeline p = channel.pipeline();
 
         final EventLoopGroup currentChildGroup = childGroup;
@@ -165,8 +167,9 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         synchronized (childAttrs) {
             currentChildAttrs = childAttrs.entrySet().toArray(newAttrArray(childAttrs.size()));
         }
-
-        p.addLast(new ChannelInitializer<Channel>() {
+        // channel本地注册完成后才会channelRegistered->initChannel，届时再将ServerBootstrapAcceptor加入
+        // ChannelInitializer只是个过渡handler，在被调用一次后，它会将自己删除
+        ChannelInitializer<Channel> channelInitializer = new ChannelInitializer<Channel>() {
             @Override
             public void initChannel(final Channel ch) throws Exception {
                 final ChannelPipeline pipeline = ch.pipeline();
@@ -174,16 +177,16 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 if (handler != null) {
                     pipeline.addLast(handler);
                 }
-
+                // ServerBootstrapAcceptor是连接建立的核心，它负责将接收到accept请求分发给子group
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
-                        pipeline.addLast(new ServerBootstrapAcceptor(
-                                ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
+                        pipeline.addLast(new ServerBootstrapAcceptor(ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
                     }
                 });
             }
-        });
+        };
+        p.addLast(channelInitializer);
     }
 
     @Override
@@ -217,9 +220,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         private final Entry<AttributeKey<?>, Object>[] childAttrs;
         private final Runnable enableAutoReadTask;
 
-        ServerBootstrapAcceptor(
-                final Channel channel, EventLoopGroup childGroup, ChannelHandler childHandler,
-                Entry<ChannelOption<?>, Object>[] childOptions, Entry<AttributeKey<?>, Object>[] childAttrs) {
+        ServerBootstrapAcceptor(final Channel channel, EventLoopGroup childGroup, ChannelHandler childHandler, Entry<ChannelOption<?>, Object>[] childOptions,
+                Entry<AttributeKey<?>, Object>[] childAttrs) {
             this.childGroup = childGroup;
             this.childHandler = childHandler;
             this.childOptions = childOptions;
@@ -247,7 +249,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
 
             setChannelOptions(child, childOptions, logger);
 
-            for (Entry<AttributeKey<?>, Object> e: childAttrs) {
+            for (Entry<AttributeKey<?>, Object> e : childAttrs) {
                 child.attr((AttributeKey<Object>) e.getKey()).set(e.getValue());
             }
 
