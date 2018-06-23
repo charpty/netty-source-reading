@@ -16,9 +16,12 @@
 package io.netty.bootstrap;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
@@ -98,6 +101,20 @@ public class ServerBootstrapTest {
             }
         };
 
+        final ChannelHandler childHandler = new ChannelInboundHandlerAdapter() {
+            @Override
+            public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+                System.out.println("child handler add:" + ctx);
+                super.handlerAdded(ctx);
+            }
+
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                System.out.println("child channel read:" + msg.getClass() + "#" + String.valueOf(msg));
+                super.channelRead(ctx, msg);
+            }
+        };
+
         Channel sch = null;
         Channel cch = null;
         NioEventLoopGroup group = new NioEventLoopGroup();
@@ -105,8 +122,9 @@ public class ServerBootstrapTest {
             ServerBootstrap sb = new ServerBootstrap();
             // 这里指定的channel是netty与JDK channel交互的一个桥梁
             sb.channel(NioServerSocketChannel.class);
-            sb.group(group).childHandler(new ChannelInboundHandlerAdapter());
+            sb.group(group);
             sb.handler(handler);
+            sb.childHandler(childHandler);
 
             Bootstrap cb = new Bootstrap();
             cb.group(group);
@@ -119,7 +137,10 @@ public class ServerBootstrapTest {
             sch = bind.sync().channel();
 
             cch = cb.connect(addr).channel();
-            cch.write("simple msg");
+            ByteBuf ob = ByteBufAllocator.DEFAULT.buffer(32);
+            ob.writeBytes("simple msg".getBytes());
+            cch.write(ob);
+            cch.flush();
             Thread.sleep(1000);
         } finally {
             if (sch != null) {

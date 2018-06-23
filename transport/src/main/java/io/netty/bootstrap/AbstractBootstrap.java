@@ -342,6 +342,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         // 核心操作，根据channel类型将channel注册到选择器上selector（或KQueue、Epoll等）
         // 这里谁注册谁是说起来真的别扭D:#，要注意这里也是交给线程池处理的（ES）
         // 注册完成之后pipeline：head -> ServerBootstrapAcceptor -> tail
+        // 该过程中选取一个EventLoop并将其设置给channel
         ChannelFuture regFuture = group.register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {

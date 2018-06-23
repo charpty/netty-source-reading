@@ -48,11 +48,10 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractNioChannel extends AbstractChannel {
 
-    private static final InternalLogger logger =
-            InternalLoggerFactory.getInstance(AbstractNioChannel.class);
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(AbstractNioChannel.class);
 
-    private static final ClosedChannelException DO_CLOSE_CLOSED_CHANNEL_EXCEPTION = ThrowableUtil.unknownStackTrace(
-            new ClosedChannelException(), AbstractNioChannel.class, "doClose()");
+    private static final ClosedChannelException DO_CLOSE_CLOSED_CHANNEL_EXCEPTION = ThrowableUtil
+            .unknownStackTrace(new ClosedChannelException(), AbstractNioChannel.class, "doClose()");
 
     private final SelectableChannel ch;
     protected final int readInterestOp;
@@ -76,9 +75,12 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     /**
      * Create a new instance
      *
-     * @param parent            the parent {@link Channel} by which this instance was created. May be {@code null}
-     * @param ch                the underlying {@link SelectableChannel} on which it operates
-     * @param readInterestOp    the ops to set to receive data from the {@link SelectableChannel}
+     * @param parent
+     *         the parent {@link Channel} by which this instance was created. May be {@code null}
+     * @param ch
+     *         the underlying {@link SelectableChannel} on which it operates
+     * @param readInterestOp
+     *         the ops to set to receive data from the {@link SelectableChannel}
      */
     protected AbstractNioChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
         super(parent);
@@ -91,8 +93,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 ch.close();
             } catch (IOException e2) {
                 if (logger.isWarnEnabled()) {
-                    logger.warn(
-                            "Failed to close a partially initialized socket.", e2);
+                    logger.warn("Failed to close a partially initialized socket.", e2);
                 }
             }
 
@@ -238,8 +239,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        public final void connect(
-                final SocketAddress remoteAddress, final SocketAddress localAddress, final ChannelPromise promise) {
+        public final void connect(final SocketAddress remoteAddress, final SocketAddress localAddress, final ChannelPromise promise) {
             if (!promise.setUncancellable() || !ensureOpen(promise)) {
                 return;
             }
@@ -264,8 +264,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                             @Override
                             public void run() {
                                 ChannelPromise connectPromise = AbstractNioChannel.this.connectPromise;
-                                ConnectTimeoutException cause =
-                                        new ConnectTimeoutException("connection timed out: " + remoteAddress);
+                                ConnectTimeoutException cause = new ConnectTimeoutException("connection timed out: " + remoteAddress);
                                 if (connectPromise != null && connectPromise.tryFailure(cause)) {
                                     close(voidPromise());
                                 }
@@ -381,8 +380,9 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     @Override
     protected void doRegister() throws Exception {
         boolean selected = false;
-        for (;;) {
+        for (; ; ) {
             try {
+                // 首次仅注册一个空事件，实际关心事件在首次read时通过beginRead()设置
                 selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
                 return;
             } catch (CancelledKeyException e) {
@@ -412,10 +412,11 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         if (!selectionKey.isValid()) {
             return;
         }
-
+        // 非selectKey触发的情况下
         readPending = true;
 
         final int interestOps = selectionKey.interestOps();
+        // this.readInterestOp存储的就是各channel实现实际关心的ops事件
         if ((interestOps & readInterestOp) == 0) {
             selectionKey.interestOps(interestOps | readInterestOp);
         }
