@@ -26,7 +26,8 @@ import java.util.concurrent.TimeUnit;
  * via its {@link #next()} method. Besides this, it is also responsible for handling their
  * life-cycle and allows shutting them down in a global fashion.
  *
- *
+ * 是EventExecutor的集合，负责管理EventExecutor的生命周期和调度
+ * 线程池本身是一个ScheduledExecutorService的实现
  */
 public interface EventExecutorGroup extends ScheduledExecutorService, Iterable<EventExecutor> {
 
@@ -50,10 +51,13 @@ public interface EventExecutorGroup extends ScheduledExecutorService, Iterable<E
      * (usually a couple seconds) before it shuts itself down.  If a task is submitted during the quiet period,
      * it is guaranteed to be accepted and the quiet period will start over.
      *
-     * @param quietPeriod the quiet period as described in the documentation
-     * @param timeout     the maximum amount of time to wait until the executor is {@linkplain #shutdown()}
-     *                    regardless if a task was submitted during the quiet period
-     * @param unit        the unit of {@code quietPeriod} and {@code timeout}
+     * @param quietPeriod
+     *         the quiet period as described in the documentation
+     * @param timeout
+     *         the maximum amount of time to wait until the executor is {@linkplain #shutdown()}
+     *         regardless if a task was submitted during the quiet period
+     * @param unit
+     *         the unit of {@code quietPeriod} and {@code timeout}
      *
      * @return the {@link #terminationFuture()}
      */

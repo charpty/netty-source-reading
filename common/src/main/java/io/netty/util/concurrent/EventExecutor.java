@@ -21,6 +21,8 @@ package io.netty.util.concurrent;
  * Besides this, it also extends the {@link EventExecutorGroup} to allow for a generic
  * way to access methods.
  *
+ * EventExecutor可以看作是单个线程池，但是它提供了判断当前线程是否是绑定在Executor中的线程
+ * 这个检查是netty高性能线程调度的核心
  */
 public interface EventExecutor extends EventExecutorGroup {
 
@@ -37,6 +39,9 @@ public interface EventExecutor extends EventExecutorGroup {
 
     /**
      * Calls {@link #inEventLoop(Thread)} with {@link Thread#currentThread()} as argument
+     *
+     * 当当前线程是与EventLoop绑定的线程时，那么就会直接执行任务
+     * 如果不是则会将当前任务放入队列等待稍后调度
      */
     boolean inEventLoop();
 
