@@ -370,6 +370,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
         // This method is invoked before channelRegistered() is triggered.  Give user handlers a chance to set up
         // the pipeline in its channelRegistered() implementation.
+        // 由于channel promise在注册成功时调用setSuccess()将触发所有listener，保证该方法在channelRegistered事件触发前执行
+        // 这是给开发者根据bind情况定制流水线handler的机会
         channel.eventLoop().execute(new Runnable() {
             @Override
             public void run() {

@@ -15,7 +15,6 @@
  */
 package io.netty.channel;
 
-
 import io.netty.util.concurrent.AbstractEventExecutorGroup;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
@@ -42,14 +41,15 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * An {@link EventLoopGroup} that creates one {@link EventLoop} per {@link Channel}.
+ * ThreadPerChannelEventLoopGroup通常用于阻塞型传输，和JDK的socket编程类似，为每个channel创建一个线程
+ * OioEventLoopGroup就是典型子类
  */
 public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup implements EventLoopGroup {
 
     private final Object[] childArgs;
     private final int maxChannels;
     final Executor executor;
-    final Set<EventLoop> activeChildren =
-            Collections.newSetFromMap(PlatformDependent.<EventLoop, Boolean>newConcurrentHashMap());
+    final Set<EventLoop> activeChildren = Collections.newSetFromMap(PlatformDependent.<EventLoop, Boolean>newConcurrentHashMap());
     final Queue<EventLoop> idleChildren = new ConcurrentLinkedQueue<EventLoop>();
     private final ChannelException tooManyChannels;
 
@@ -75,11 +75,12 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
     /**
      * Create a new {@link ThreadPerChannelEventLoopGroup}.
      *
-     * @param maxChannels       the maximum number of channels to handle with this instance. Once you try to register
-     *                          a new {@link Channel} and the maximum is exceed it will throw an
-     *                          {@link ChannelException}. on the {@link #register(Channel)} and
-     *                          {@link #register(ChannelPromise)} method.
-     *                          Use {@code 0} to use no limit
+     * @param maxChannels
+     *         the maximum number of channels to handle with this instance. Once you try to register
+     *         a new {@link Channel} and the maximum is exceed it will throw an
+     *         {@link ChannelException}. on the {@link #register(Channel)} and
+     *         {@link #register(ChannelPromise)} method.
+     *         Use {@code 0} to use no limit
      */
     protected ThreadPerChannelEventLoopGroup(int maxChannels) {
         this(maxChannels, Executors.defaultThreadFactory());
@@ -88,14 +89,17 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
     /**
      * Create a new {@link ThreadPerChannelEventLoopGroup}.
      *
-     * @param maxChannels       the maximum number of channels to handle with this instance. Once you try to register
-     *                          a new {@link Channel} and the maximum is exceed it will throw an
-     *                          {@link ChannelException} on the {@link #register(Channel)} and
-     *                          {@link #register(ChannelPromise)} method.
-     *                          Use {@code 0} to use no limit
-     * @param threadFactory     the {@link ThreadFactory} used to create new {@link Thread} instances that handle the
-     *                          registered {@link Channel}s
-     * @param args              arguments which will passed to each {@link #newChild(Object...)} call.
+     * @param maxChannels
+     *         the maximum number of channels to handle with this instance. Once you try to register
+     *         a new {@link Channel} and the maximum is exceed it will throw an
+     *         {@link ChannelException} on the {@link #register(Channel)} and
+     *         {@link #register(ChannelPromise)} method.
+     *         Use {@code 0} to use no limit
+     * @param threadFactory
+     *         the {@link ThreadFactory} used to create new {@link Thread} instances that handle the
+     *         registered {@link Channel}s
+     * @param args
+     *         arguments which will passed to each {@link #newChild(Object...)} call.
      */
     protected ThreadPerChannelEventLoopGroup(int maxChannels, ThreadFactory threadFactory, Object... args) {
         this(maxChannels, new ThreadPerTaskExecutor(threadFactory), args);
@@ -104,19 +108,21 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
     /**
      * Create a new {@link ThreadPerChannelEventLoopGroup}.
      *
-     * @param maxChannels       the maximum number of channels to handle with this instance. Once you try to register
-     *                          a new {@link Channel} and the maximum is exceed it will throw an
-     *                          {@link ChannelException} on the {@link #register(Channel)} and
-     *                          {@link #register(ChannelPromise)} method.
-     *                          Use {@code 0} to use no limit
-     * @param executor          the {@link Executor} used to create new {@link Thread} instances that handle the
-     *                          registered {@link Channel}s
-     * @param args              arguments which will passed to each {@link #newChild(Object...)} call.
+     * @param maxChannels
+     *         the maximum number of channels to handle with this instance. Once you try to register
+     *         a new {@link Channel} and the maximum is exceed it will throw an
+     *         {@link ChannelException} on the {@link #register(Channel)} and
+     *         {@link #register(ChannelPromise)} method.
+     *         Use {@code 0} to use no limit
+     * @param executor
+     *         the {@link Executor} used to create new {@link Thread} instances that handle the
+     *         registered {@link Channel}s
+     * @param args
+     *         arguments which will passed to each {@link #newChild(Object...)} call.
      */
     protected ThreadPerChannelEventLoopGroup(int maxChannels, Executor executor, Object... args) {
         if (maxChannels < 0) {
-            throw new IllegalArgumentException(String.format(
-                    "maxChannels: %d (expected: >= 0)", maxChannels));
+            throw new IllegalArgumentException(String.format("maxChannels: %d (expected: >= 0)", maxChannels));
         }
         if (executor == null) {
             throw new NullPointerException("executor");
@@ -131,9 +137,8 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
         this.maxChannels = maxChannels;
         this.executor = executor;
 
-        tooManyChannels = ThrowableUtil.unknownStackTrace(
-                new ChannelException("too many channels (max: " + maxChannels + ')'),
-                ThreadPerChannelEventLoopGroup.class, "nextChild()");
+        tooManyChannels = ThrowableUtil
+                .unknownStackTrace(new ChannelException("too many channels (max: " + maxChannels + ')'), ThreadPerChannelEventLoopGroup.class, "nextChild()");
     }
 
     /**
@@ -157,10 +162,10 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
     public Future<?> shutdownGracefully(long quietPeriod, long timeout, TimeUnit unit) {
         shuttingDown = true;
 
-        for (EventLoop l: activeChildren) {
+        for (EventLoop l : activeChildren) {
             l.shutdownGracefully(quietPeriod, timeout, unit);
         }
-        for (EventLoop l: idleChildren) {
+        for (EventLoop l : idleChildren) {
             l.shutdownGracefully(quietPeriod, timeout, unit);
         }
 
@@ -182,10 +187,10 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
     public void shutdown() {
         shuttingDown = true;
 
-        for (EventLoop l: activeChildren) {
+        for (EventLoop l : activeChildren) {
             l.shutdown();
         }
-        for (EventLoop l: idleChildren) {
+        for (EventLoop l : idleChildren) {
             l.shutdown();
         }
 
@@ -197,12 +202,12 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
 
     @Override
     public boolean isShuttingDown() {
-        for (EventLoop l: activeChildren) {
+        for (EventLoop l : activeChildren) {
             if (!l.isShuttingDown()) {
                 return false;
             }
         }
-        for (EventLoop l: idleChildren) {
+        for (EventLoop l : idleChildren) {
             if (!l.isShuttingDown()) {
                 return false;
             }
@@ -212,12 +217,12 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
 
     @Override
     public boolean isShutdown() {
-        for (EventLoop l: activeChildren) {
+        for (EventLoop l : activeChildren) {
             if (!l.isShutdown()) {
                 return false;
             }
         }
-        for (EventLoop l: idleChildren) {
+        for (EventLoop l : idleChildren) {
             if (!l.isShutdown()) {
                 return false;
             }
@@ -227,12 +232,12 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
 
     @Override
     public boolean isTerminated() {
-        for (EventLoop l: activeChildren) {
+        for (EventLoop l : activeChildren) {
             if (!l.isTerminated()) {
                 return false;
             }
         }
-        for (EventLoop l: idleChildren) {
+        for (EventLoop l : idleChildren) {
             if (!l.isTerminated()) {
                 return false;
             }
@@ -241,11 +246,10 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
     }
 
     @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit)
-            throws InterruptedException {
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         long deadline = System.nanoTime() + unit.toNanos(timeout);
-        for (EventLoop l: activeChildren) {
-            for (;;) {
+        for (EventLoop l : activeChildren) {
+            for (; ; ) {
                 long timeLeft = deadline - System.nanoTime();
                 if (timeLeft <= 0) {
                     return isTerminated();
@@ -255,8 +259,8 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
                 }
             }
         }
-        for (EventLoop l: idleChildren) {
-            for (;;) {
+        for (EventLoop l : idleChildren) {
+            for (; ; ) {
                 long timeLeft = deadline - System.nanoTime();
                 if (timeLeft <= 0) {
                     return isTerminated();

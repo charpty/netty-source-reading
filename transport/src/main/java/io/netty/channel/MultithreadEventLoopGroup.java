@@ -29,6 +29,9 @@ import java.util.concurrent.ThreadFactory;
 /**
  * Abstract base class for {@link EventLoopGroup} implementations that handles their tasks with multiple threads at
  * the same time.
+ *
+ * MultithreadEventLoopGroup通常用于异步传输场景，依靠少量的EventLoop为大量channel处理出入站事件
+ * NioEventLoopGroup就是其中的实现典型
  */
 public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutorGroup implements EventLoopGroup {
 
@@ -37,8 +40,7 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
     private static final int DEFAULT_EVENT_LOOP_THREADS;
 
     static {
-        DEFAULT_EVENT_LOOP_THREADS = Math.max(1, SystemPropertyUtil.getInt(
-                "io.netty.eventLoopThreads", NettyRuntime.availableProcessors() * 2));
+        DEFAULT_EVENT_LOOP_THREADS = Math.max(1, SystemPropertyUtil.getInt("io.netty.eventLoopThreads", NettyRuntime.availableProcessors() * 2));
 
         if (logger.isDebugEnabled()) {
             logger.debug("-Dio.netty.eventLoopThreads: {}", DEFAULT_EVENT_LOOP_THREADS);
@@ -60,11 +62,9 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
     }
 
     /**
-     * @see MultithreadEventExecutorGroup#MultithreadEventExecutorGroup(int, Executor,
-     * EventExecutorChooserFactory, Object...)
+     * @see MultithreadEventExecutorGroup#MultithreadEventExecutorGroup(int, Executor, * EventExecutorChooserFactory, Object...)
      */
-    protected MultithreadEventLoopGroup(int nThreads, Executor executor, EventExecutorChooserFactory chooserFactory,
-                                     Object... args) {
+    protected MultithreadEventLoopGroup(int nThreads, Executor executor, EventExecutorChooserFactory chooserFactory, Object... args) {
         super(nThreads == 0 ? DEFAULT_EVENT_LOOP_THREADS : nThreads, executor, chooserFactory, args);
     }
 
