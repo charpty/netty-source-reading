@@ -15,22 +15,27 @@
  */
 package io.netty.channel;
 
+import java.util.concurrent.TimeUnit;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.util.concurrent.BlockingOperationException;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
-import java.util.concurrent.TimeUnit;
-
-
 /**
  * The result of an asynchronous {@link Channel} I/O operation.
+ *
+ * channel操作的各种异步结果
+ *
  * <p>
  * All I/O operations in Netty are asynchronous.  It means any I/O calls will
  * return immediately with no guarantee that the requested I/O operation has
  * been completed at the end of the call.  Instead, you will be returned with
  * a {@link ChannelFuture} instance which gives you the information about the
  * result or status of the I/O operation.
+ *
+ * Netty中所有I/O操作都是异步的，意味着所有I/O操作都是即可返回，但是不代表I/O操作已完成
+ * 每个I/O操作都是返回一个ChannelFuture，和Future一样，可以通过它获取执行结果
+ *
  * <p>
  * A {@link ChannelFuture} is either <em>uncompleted</em> or <em>completed</em>.
  * When an I/O operation begins, a new future object is created.  The new future
@@ -40,6 +45,10 @@ import java.util.concurrent.TimeUnit;
  * marked as completed with more specific information, such as the cause of the
  * failure.  Please note that even failure and cancellation belong to the
  * completed state.
+ *
+ * 无论是否完成，都会创建一个ChannelFuture来代表I/O操作结果。ChannelFuture初始化为未完成，有成功、失败、取消等等状态
+ * 如果I/O操作以失败结束，Future中会记录异常信息（和FutureTask一样），不论结果如何，执行结束就是完成
+ *
  * <pre>
  *                                      +---------------------------+
  *                                      | Completed successfully    |
@@ -63,6 +72,9 @@ import java.util.concurrent.TimeUnit;
  * completed, wait for the completion, and retrieve the result of the I/O
  * operation. It also allows you to add {@link ChannelFutureListener}s so you
  * can get notified when the I/O operation is completed.
+ *
+ * 提供了多种方法用于监测I/O操作是否完成，等待操作完成并恢复I/O响应
+ * 同时也可以通过添加监听器ChannelFutureListener实现在I/O操作完成时触发
  *
  * <h3>Prefer {@link #addListener(GenericFutureListener)} to {@link #await()}</h3>
  *
@@ -198,14 +210,14 @@ public interface ChannelFuture extends Future<Void> {
      * Returns {@code true} if this {@link ChannelFuture} is a void future and so not allow to call any of the
      * following methods:
      * <ul>
-     *     <li>{@link #addListener(GenericFutureListener)}</li>
-     *     <li>{@link #addListeners(GenericFutureListener[])}</li>
-     *     <li>{@link #await()}</li>
-     *     <li>{@link #await(long, TimeUnit)} ()}</li>
-     *     <li>{@link #await(long)} ()}</li>
-     *     <li>{@link #awaitUninterruptibly()}</li>
-     *     <li>{@link #sync()}</li>
-     *     <li>{@link #syncUninterruptibly()}</li>
+     * <li>{@link #addListener(GenericFutureListener)}</li>
+     * <li>{@link #addListeners(GenericFutureListener[])}</li>
+     * <li>{@link #await()}</li>
+     * <li>{@link #await(long, TimeUnit)} ()}</li>
+     * <li>{@link #await(long)} ()}</li>
+     * <li>{@link #awaitUninterruptibly()}</li>
+     * <li>{@link #sync()}</li>
+     * <li>{@link #syncUninterruptibly()}</li>
      * </ul>
      */
     boolean isVoid();
