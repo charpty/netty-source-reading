@@ -16,9 +16,9 @@
 
 package io.netty.buffer;
 
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import io.netty.util.IllegalReferenceCountException;
 
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static io.netty.util.internal.ObjectUtil.checkPositive;
 
@@ -27,8 +27,9 @@ import static io.netty.util.internal.ObjectUtil.checkPositive;
  */
 public abstract class AbstractReferenceCountedByteBuf extends AbstractByteBuf {
 
-    private static final AtomicIntegerFieldUpdater<AbstractReferenceCountedByteBuf> refCntUpdater =
-            AtomicIntegerFieldUpdater.newUpdater(AbstractReferenceCountedByteBuf.class, "refCnt");
+    // 使用JDK的原子变量更新引用计数
+    private static final AtomicIntegerFieldUpdater<AbstractReferenceCountedByteBuf> refCntUpdater = AtomicIntegerFieldUpdater
+            .newUpdater(AbstractReferenceCountedByteBuf.class, "refCnt");
 
     private volatile int refCnt;
 
@@ -56,11 +57,14 @@ public abstract class AbstractReferenceCountedByteBuf extends AbstractByteBuf {
 
     @Override
     public ByteBuf retain(int increment) {
+        // 不是特别喜欢这种import static的写法，但是netty和commons-io里挺多
         return retain0(checkPositive(increment, "increment"));
     }
 
     private ByteBuf retain0(final int increment) {
+        // 增加引用，表示并发环境有其他线程也持有了该buffer的视图
         int oldRef = refCntUpdater.getAndAdd(this, increment);
+        // 这里有很多这种 a + b < a这种写法，除了判断b得>=0之外，还防止int溢出
         if (oldRef <= 0 || oldRef + increment < oldRef) {
             // Ensure we don't resurrect (which means the refCnt was 0) and also that we encountered an overflow.
             refCntUpdater.getAndAdd(this, -increment);
@@ -90,17 +94,21 @@ public abstract class AbstractReferenceCountedByteBuf extends AbstractByteBuf {
     }
 
     private boolean release0(int decrement) {
+        // 表示有线程放弃持有操作buffer的引用
         int oldRef = refCntUpdater.getAndAdd(this, -decrement);
         if (oldRef == decrement) {
+            // 当前引用计数为0了
             deallocate();
             return true;
         } else if (oldRef < decrement || oldRef - decrement > oldRef) {
+            // 去除的引用数不能小于0且不能大于目前总引用数
             // Ensure we don't over-release, and avoid underflow.
             refCntUpdater.getAndAdd(this, decrement);
             throw new IllegalReferenceCountException(oldRef, -decrement);
         }
         return false;
     }
+
     /**
      * Called once {@link #refCnt()} is equals 0.
      */

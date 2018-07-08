@@ -336,6 +336,9 @@ public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf> {
      *
      * @deprecated use the Little Endian accessors, e.g. {@code getShortLE}, {@code getIntLE}
      * instead of creating a buffer with swapped {@code endianness}.
+     *
+     * 返回字节码顺序，一般在网络流中采用大端字节序
+     *
      */
     @Deprecated
     public abstract ByteOrder order();
@@ -350,6 +353,10 @@ public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf> {
      *
      * @deprecated use the Little Endian accessors, e.g. {@code getShortLE}, {@code getIntLE}
      * instead of creating a buffer with swapped {@code endianness}.
+     *
+     * 之前使用这个方法来构造小端（默认就是大端）字节序的buffer
+     * 现在可以在相同buffer上通过*LE()系列的方法来以小端字节序获取数据
+     *
      */
     @Deprecated
     public abstract ByteBuf order(ByteOrder endianness);

@@ -15,9 +15,6 @@
  */
 package io.netty.buffer;
 
-import io.netty.util.internal.EmptyArrays;
-import io.netty.util.internal.PlatformDependent;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,6 +24,9 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
+import io.netty.util.internal.EmptyArrays;
+import io.netty.util.internal.PlatformDependent;
+
 
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
 
@@ -34,6 +34,12 @@ import static io.netty.util.internal.ObjectUtil.checkNotNull;
  * Big endian Java heap buffer implementation. It is recommended to use
  * {@link UnpooledByteBufAllocator#heapBuffer(int, int)}, {@link Unpooled#buffer(int)} and
  * {@link Unpooled#wrappedBuffer(byte[])} instead of calling the constructor explicitly.
+ *
+ * 大端（网络默认字节序）版本的Java堆模式buffer实现。
+ * 推荐使用UnpooledByteBufAllocator的helper方法或者Unpooled工具类构建该Buffer，而不是直接new
+ *
+ * 由于骨架类AbstractByteBuf已实现大多主逻辑，该类作为最普通常见的基本实现已无需写太多逻辑代码
+ * 只需要实现_setXXX系列以及如何伸缩即可
  */
 public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
 
@@ -44,8 +50,10 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
     /**
      * Creates a new heap buffer with a newly allocated byte array.
      *
-     * @param initialCapacity the initial capacity of the underlying byte array
-     * @param maxCapacity the max capacity of the underlying byte array
+     * @param initialCapacity
+     *         the initial capacity of the underlying byte array
+     * @param maxCapacity
+     *         the max capacity of the underlying byte array
      */
     public UnpooledHeapByteBuf(ByteBufAllocator alloc, int initialCapacity, int maxCapacity) {
         super(maxCapacity);
@@ -53,8 +61,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
         checkNotNull(alloc, "alloc");
 
         if (initialCapacity > maxCapacity) {
-            throw new IllegalArgumentException(String.format(
-                    "initialCapacity(%d) > maxCapacity(%d)", initialCapacity, maxCapacity));
+            throw new IllegalArgumentException(String.format("initialCapacity(%d) > maxCapacity(%d)", initialCapacity, maxCapacity));
         }
 
         this.alloc = alloc;
@@ -65,8 +72,10 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
     /**
      * Creates a new heap buffer with an existing byte array.
      *
-     * @param initialArray the initial underlying byte array
-     * @param maxCapacity the max capacity of the underlying byte array
+     * @param initialArray
+     *         the initial underlying byte array
+     * @param maxCapacity
+     *         the max capacity of the underlying byte array
      */
     protected UnpooledHeapByteBuf(ByteBufAllocator alloc, byte[] initialArray, int maxCapacity) {
         super(maxCapacity);
@@ -75,8 +84,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
         checkNotNull(initialArray, "initialArray");
 
         if (initialArray.length > maxCapacity) {
-            throw new IllegalArgumentException(String.format(
-                    "initialCapacity(%d) > maxCapacity(%d)", initialArray.length, maxCapacity));
+            throw new IllegalArgumentException(String.format("initialCapacity(%d) > maxCapacity(%d)", initialArray.length, maxCapacity));
         }
 
         this.alloc = alloc;
@@ -124,11 +132,13 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
         int oldCapacity = array.length;
         byte[] oldArray = array;
         if (newCapacity > oldCapacity) {
+            // 扩容场景，新申请一块新的内存并将原数据拷贝过去
             byte[] newArray = allocateArray(newCapacity);
             System.arraycopy(oldArray, 0, newArray, 0, oldArray.length);
             setArray(newArray);
             freeArray(oldArray);
         } else if (newCapacity < oldCapacity) {
+            // 如果是缩容则要判断当前的未读区域情况，存在对buffer内容的截断
             byte[] newArray = allocateArray(newCapacity);
             int readerIndex = readerIndex();
             if (readerIndex < newCapacity) {
@@ -136,8 +146,10 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
                 if (writerIndex > newCapacity) {
                     writerIndex(writerIndex = newCapacity);
                 }
+                // 如果已读区域小于newCapacity，那么尽可能的把还没读的数据保留到新的数组中
                 System.arraycopy(oldArray, readerIndex, newArray, readerIndex, writerIndex - readerIndex);
             } else {
+                // 如果已读区域大于newCapacity，那么readerIndex后的数据就全被丢弃了
                 setIndex(newCapacity, newCapacity);
             }
             setArray(newArray);
@@ -256,7 +268,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
         checkSrcIndex(index, length, srcIndex, src.capacity());
         if (src.hasMemoryAddress()) {
             PlatformDependent.copyMemory(src.memoryAddress() + srcIndex, array, index, length);
-        } else  if (src.hasArray()) {
+        } else if (src.hasArray()) {
             setBytes(index, src.array(), src.arrayOffset() + srcIndex, length);
         } else {
             src.getBytes(srcIndex, array, index, length);
@@ -462,7 +474,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
     }
 
     @Override
-    public ByteBuf setMedium(int index, int   value) {
+    public ByteBuf setMedium(int index, int value) {
         ensureAccessible();
         _setMedium(index, value);
         return this;
@@ -474,7 +486,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
     }
 
     @Override
-    public ByteBuf setMediumLE(int index, int   value) {
+    public ByteBuf setMediumLE(int index, int value) {
         ensureAccessible();
         _setMediumLE(index, value);
         return this;
@@ -486,7 +498,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
     }
 
     @Override
-    public ByteBuf setInt(int index, int   value) {
+    public ByteBuf setInt(int index, int value) {
         ensureAccessible();
         _setInt(index, value);
         return this;
@@ -498,7 +510,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
     }
 
     @Override
-    public ByteBuf setIntLE(int index, int   value) {
+    public ByteBuf setIntLE(int index, int value) {
         ensureAccessible();
         _setIntLE(index, value);
         return this;
@@ -510,7 +522,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
     }
 
     @Override
-    public ByteBuf setLong(int index, long  value) {
+    public ByteBuf setLong(int index, long value) {
         ensureAccessible();
         _setLong(index, value);
         return this;
@@ -522,7 +534,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
     }
 
     @Override
-    public ByteBuf setLongLE(int index, long  value) {
+    public ByteBuf setLongLE(int index, long value) {
         ensureAccessible();
         _setLongLE(index, value);
         return this;
