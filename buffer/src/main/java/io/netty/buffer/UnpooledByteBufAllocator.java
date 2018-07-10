@@ -15,14 +15,15 @@
  */
 package io.netty.buffer;
 
+import java.nio.ByteBuffer;
 import io.netty.util.internal.LongCounter;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.StringUtil;
 
-import java.nio.ByteBuffer;
-
 /**
  * Simplistic {@link ByteBufAllocator} implementation that does not pool anything.
+ *
+ * 非池化的分配器类似scope=property，每次都分配一个
  */
 public final class UnpooledByteBufAllocator extends AbstractByteBufAllocator implements ByteBufAllocatorMetricProvider {
 
@@ -33,14 +34,14 @@ public final class UnpooledByteBufAllocator extends AbstractByteBufAllocator imp
     /**
      * Default instance which uses leak-detection for direct buffers.
      */
-    public static final UnpooledByteBufAllocator DEFAULT =
-            new UnpooledByteBufAllocator(PlatformDependent.directBufferPreferred());
+    public static final UnpooledByteBufAllocator DEFAULT = new UnpooledByteBufAllocator(PlatformDependent.directBufferPreferred());
 
     /**
      * Create a new instance which uses leak-detection for direct buffers.
      *
-     * @param preferDirect {@code true} if {@link #buffer(int)} should try to allocate a direct buffer rather than
-     *                     a heap buffer
+     * @param preferDirect
+     *         {@code true} if {@link #buffer(int)} should try to allocate a direct buffer rather than
+     *         a heap buffer
      */
     public UnpooledByteBufAllocator(boolean preferDirect) {
         this(preferDirect, false);
@@ -49,11 +50,13 @@ public final class UnpooledByteBufAllocator extends AbstractByteBufAllocator imp
     /**
      * Create a new instance
      *
-     * @param preferDirect {@code true} if {@link #buffer(int)} should try to allocate a direct buffer rather than
-     *                     a heap buffer
-     * @param disableLeakDetector {@code true} if the leak-detection should be disabled completely for this
-     *                            allocator. This can be useful if the user just want to depend on the GC to handle
-     *                            direct buffers when not explicit released.
+     * @param preferDirect
+     *         {@code true} if {@link #buffer(int)} should try to allocate a direct buffer rather than
+     *         a heap buffer
+     * @param disableLeakDetector
+     *         {@code true} if the leak-detection should be disabled completely for this
+     *         allocator. This can be useful if the user just want to depend on the GC to handle
+     *         direct buffers when not explicit released.
      */
     public UnpooledByteBufAllocator(boolean preferDirect, boolean disableLeakDetector) {
         this(preferDirect, disableLeakDetector, PlatformDependent.useDirectBufferNoCleaner());
@@ -62,19 +65,21 @@ public final class UnpooledByteBufAllocator extends AbstractByteBufAllocator imp
     /**
      * Create a new instance
      *
-     * @param preferDirect {@code true} if {@link #buffer(int)} should try to allocate a direct buffer rather than
-     *                     a heap buffer
-     * @param disableLeakDetector {@code true} if the leak-detection should be disabled completely for this
-     *                            allocator. This can be useful if the user just want to depend on the GC to handle
-     *                            direct buffers when not explicit released.
-     * @param tryNoCleaner {@code true} if we should try to use {@link PlatformDependent#allocateDirectNoCleaner(int)}
-     *                            to allocate direct memory.
+     * @param preferDirect
+     *         {@code true} if {@link #buffer(int)} should try to allocate a direct buffer rather than
+     *         a heap buffer
+     * @param disableLeakDetector
+     *         {@code true} if the leak-detection should be disabled completely for this
+     *         allocator. This can be useful if the user just want to depend on the GC to handle
+     *         direct buffers when not explicit released.
+     * @param tryNoCleaner
+     *         {@code true} if we should try to use {@link PlatformDependent#allocateDirectNoCleaner(int)}
+     *         to allocate direct memory.
      */
     public UnpooledByteBufAllocator(boolean preferDirect, boolean disableLeakDetector, boolean tryNoCleaner) {
         super(preferDirect);
         this.disableLeakDetector = disableLeakDetector;
-        noCleaner = tryNoCleaner && PlatformDependent.hasUnsafe()
-                && PlatformDependent.hasDirectBufferNoCleanerConstructor();
+        noCleaner = tryNoCleaner && PlatformDependent.hasUnsafe() && PlatformDependent.hasDirectBufferNoCleanerConstructor();
     }
 
     @Override
@@ -88,7 +93,8 @@ public final class UnpooledByteBufAllocator extends AbstractByteBufAllocator imp
     protected ByteBuf newDirectBuffer(int initialCapacity, int maxCapacity) {
         final ByteBuf buf;
         if (PlatformDependent.hasUnsafe()) {
-            buf = noCleaner ? new InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf(this, initialCapacity, maxCapacity) :
+            buf = noCleaner ?
+                    new InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf(this, initialCapacity, maxCapacity) :
                     new InstrumentedUnpooledUnsafeDirectByteBuf(this, initialCapacity, maxCapacity);
         } else {
             buf = new InstrumentedUnpooledDirectByteBuf(this, initialCapacity, maxCapacity);
@@ -174,10 +180,8 @@ public final class UnpooledByteBufAllocator extends AbstractByteBufAllocator imp
         }
     }
 
-    private static final class InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf
-            extends UnpooledUnsafeNoCleanerDirectByteBuf {
-        InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf(
-                UnpooledByteBufAllocator alloc, int initialCapacity, int maxCapacity) {
+    private static final class InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf extends UnpooledUnsafeNoCleanerDirectByteBuf {
+        InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf(UnpooledByteBufAllocator alloc, int initialCapacity, int maxCapacity) {
             super(alloc, initialCapacity, maxCapacity);
         }
 
@@ -205,8 +209,7 @@ public final class UnpooledByteBufAllocator extends AbstractByteBufAllocator imp
     }
 
     private static final class InstrumentedUnpooledUnsafeDirectByteBuf extends UnpooledUnsafeDirectByteBuf {
-        InstrumentedUnpooledUnsafeDirectByteBuf(
-                UnpooledByteBufAllocator alloc, int initialCapacity, int maxCapacity) {
+        InstrumentedUnpooledUnsafeDirectByteBuf(UnpooledByteBufAllocator alloc, int initialCapacity, int maxCapacity) {
             super(alloc, initialCapacity, maxCapacity);
         }
 
@@ -226,8 +229,7 @@ public final class UnpooledByteBufAllocator extends AbstractByteBufAllocator imp
     }
 
     private static final class InstrumentedUnpooledDirectByteBuf extends UnpooledDirectByteBuf {
-        InstrumentedUnpooledDirectByteBuf(
-                UnpooledByteBufAllocator alloc, int initialCapacity, int maxCapacity) {
+        InstrumentedUnpooledDirectByteBuf(UnpooledByteBufAllocator alloc, int initialCapacity, int maxCapacity) {
             super(alloc, initialCapacity, maxCapacity);
         }
 
@@ -262,8 +264,7 @@ public final class UnpooledByteBufAllocator extends AbstractByteBufAllocator imp
 
         @Override
         public String toString() {
-            return StringUtil.simpleClassName(this) +
-                    "(usedHeapMemory: " + usedHeapMemory() + "; usedDirectMemory: " + usedDirectMemory() + ')';
+            return StringUtil.simpleClassName(this) + "(usedHeapMemory: " + usedHeapMemory() + "; usedDirectMemory: " + usedDirectMemory() + ')';
         }
     }
 }

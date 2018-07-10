@@ -21,6 +21,8 @@ import io.netty.util.internal.StringUtil;
 /**
  * Default implementation of a {@link ByteBufHolder} that holds it's data in a {@link ByteBuf}.
  *
+ * 提供一个ByteBuf的容器，为池化ByteBuf等提供便利
+ *
  */
 public class DefaultByteBufHolder implements ByteBufHolder {
 

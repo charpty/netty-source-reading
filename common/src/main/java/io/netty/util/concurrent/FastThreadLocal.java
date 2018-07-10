@@ -15,13 +15,12 @@
  */
 package io.netty.util.concurrent;
 
-import io.netty.util.internal.InternalThreadLocalMap;
-import io.netty.util.internal.ObjectCleaner;
-import io.netty.util.internal.PlatformDependent;
-
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
+import io.netty.util.internal.InternalThreadLocalMap;
+import io.netty.util.internal.ObjectCleaner;
+import io.netty.util.internal.PlatformDependent;
 
 /**
  * A special variant of {@link ThreadLocal} that yields higher access performance when accessed from a
@@ -39,7 +38,14 @@ import java.util.Set;
  * {@link ThreadLocal}.
  * </p>
  *
- * @param <V> the type of the thread-local variable
+ *
+ * 自实现的ThreadLocal，较JDK实现有更高的性能
+ * FastThreadLocal采用基于线性下标的方式实现索引，代替JDK使用hash索引的方式
+ * 由于要存储threadLocalMap等自定义属性值，一些这个基于线程的存储方式必须要求当前的线程是FastThreadLocalThread类型
+ *
+ * @param <V>
+ *         the type of the thread-local variable
+ *
  * @see ThreadLocal
  */
 public class FastThreadLocal<V> {
@@ -62,9 +68,8 @@ public class FastThreadLocal<V> {
             if (v != null && v != InternalThreadLocalMap.UNSET) {
                 @SuppressWarnings("unchecked")
                 Set<FastThreadLocal<?>> variablesToRemove = (Set<FastThreadLocal<?>>) v;
-                FastThreadLocal<?>[] variablesToRemoveArray =
-                        variablesToRemove.toArray(new FastThreadLocal[variablesToRemove.size()]);
-                for (FastThreadLocal<?> tlv: variablesToRemoveArray) {
+                FastThreadLocal<?>[] variablesToRemoveArray = variablesToRemove.toArray(new FastThreadLocal[variablesToRemove.size()]);
+                for (FastThreadLocal<?> tlv : variablesToRemoveArray) {
                     tlv.remove(threadLocalMap);
                 }
             }
@@ -109,8 +114,7 @@ public class FastThreadLocal<V> {
         variablesToRemove.add(variable);
     }
 
-    private static void removeFromVariablesToRemove(
-            InternalThreadLocalMap threadLocalMap, FastThreadLocal<?> variable) {
+    private static void removeFromVariablesToRemove(InternalThreadLocalMap threadLocalMap, FastThreadLocal<?> variable) {
 
         Object v = threadLocalMap.indexedVariable(variablesToRemoveIndex);
 
@@ -243,6 +247,7 @@ public class FastThreadLocal<V> {
     public final boolean isSet(InternalThreadLocalMap threadLocalMap) {
         return threadLocalMap != null && threadLocalMap.isIndexedVariableSet(index);
     }
+
     /**
      * Sets the value to uninitialized; a proceeding call to get() will trigger a call to initialValue().
      */
@@ -283,5 +288,6 @@ public class FastThreadLocal<V> {
     /**
      * Invoked when this thread local variable is removed by {@link #remove()}.
      */
-    protected void onRemoval(@SuppressWarnings("UnusedParameters") V value) throws Exception { }
+    protected void onRemoval(@SuppressWarnings("UnusedParameters") V value) throws Exception {
+    }
 }
