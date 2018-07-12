@@ -68,7 +68,9 @@ class WebSocketServerProtocolHandshakeHandler extends ChannelInboundHandlerAdapt
         }
 
         try {
+            // 必须以GET起来获取一个websocket upgrade
             if (req.method() != GET) {
+                // 对于那些格式不正确的请求都响应403，并不是完全代表权限拒绝
                 sendHttpResponse(ctx, req, new DefaultFullHttpResponse(HTTP_1_1, FORBIDDEN));
                 return;
             }
