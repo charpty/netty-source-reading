@@ -26,11 +26,13 @@ abstract class WebSocketProtocolHandler extends MessageToMessageDecoder<WebSocke
     protected void decode(ChannelHandlerContext ctx, WebSocketFrame frame, List<Object> out) throws Exception {
         if (frame instanceof PingWebSocketFrame) {
             frame.content().retain();
+            // 对于PING消息的直接处理
             ctx.channel().writeAndFlush(new PongWebSocketFrame(frame.content()));
             return;
         }
         if (frame instanceof PongWebSocketFrame) {
             // Pong frames need to get ignored
+            // 入站handler数据是PONG的话则直接忽略
             return;
         }
 

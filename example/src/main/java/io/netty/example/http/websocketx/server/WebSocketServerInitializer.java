@@ -42,9 +42,11 @@ public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel
         if (sslCtx != null) {
             pipeline.addLast(sslCtx.newHandler(ch.alloc()));
         }
+        // 主要用于处理http upgrade
         pipeline.addLast(new HttpServerCodec());
         pipeline.addLast(new HttpObjectAggregator(65536));
         pipeline.addLast(new WebSocketServerCompressionHandler());
+        // 这个handler只能处理netty自己的WebSocketFrame序列化字节流
         pipeline.addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true));
         pipeline.addLast(new WebSocketIndexPageHandler(WEBSOCKET_PATH));
         pipeline.addLast(new WebSocketFrameHandler());

@@ -34,6 +34,9 @@ import static io.netty.handler.codec.http.HttpVersion.*;
 
 /**
  * Handles the HTTP handshake (the HTTP Upgrade request) for {@link WebSocketServerProtocolHandler}.
+ *
+ * 实现WebSocket协议握手过程，WebSocket通过一个普通GET Upgrade请求将HTTP升级为WebSocket
+ *
  */
 class WebSocketServerProtocolHandshakeHandler extends ChannelInboundHandlerAdapter {
 

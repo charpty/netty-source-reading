@@ -19,5 +19,7 @@ print RecvContent
 # stomp
 sendContent = 'SEND\r\na:1\r\n{"a":1}'
 sk.send(sendContent)
+print "after send command"
+# 只能在websocketFrame序列化下生效
 RecvContent = sk.recv(1024)
 print RecvContent

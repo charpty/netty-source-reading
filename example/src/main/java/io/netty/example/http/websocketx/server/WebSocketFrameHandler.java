@@ -35,6 +35,7 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
     protected void channelRead0(ChannelHandlerContext ctx, WebSocketFrame frame) throws Exception {
         // ping and pong frames already handled
 
+        // 使用CompositeByteBuf存储data的？
         if (frame instanceof TextWebSocketFrame) {
             // Send the uppercase string back.
             String request = ((TextWebSocketFrame) frame).text();
